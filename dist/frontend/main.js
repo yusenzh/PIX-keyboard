@@ -254,6 +254,7 @@ var engine = new _engine__WEBPACK_IMPORTED_MODULE_0__.Engine();
 window.onload = function () {
     var canvas = document.getElementById("gameCanvas");
     var draw = canvas.getContext("2d");
+    var TILE = 250;
     var drawingCurrentPicAtX = 0;
     var drawingCurrentPicAtY = 0;
     // Start loading images so engine.loadedImages["a"] is defined
@@ -304,19 +305,27 @@ window.onload = function () {
             img = engine.loadedImages["h"];
         }
         console.log("Drawing image at ", drawingCurrentPicAtX, drawingCurrentPicAtY);
-        var drawNow = function () { return draw.drawImage(img, drawingCurrentPicAtX, drawingCurrentPicAtY, 250, 250); };
+        // Compute last valid X start so tiles never spill outside the canvas
+        var lastStartX = Math.max(0, (Math.floor(canvas.width / TILE) - 1) * TILE);
+        // If our cursor somehow points past the last valid slot, wrap before drawing
+        if (drawingCurrentPicAtX > lastStartX) {
+            drawingCurrentPicAtX = 0;
+            drawingCurrentPicAtY += TILE;
+        }
+        var drawNow = function () { return draw.drawImage(img, drawingCurrentPicAtX, drawingCurrentPicAtY, TILE, TILE); };
         if (img.complete && img.naturalWidth > 0) {
             drawNow();
         }
         else {
             img.addEventListener("load", drawNow, { once: true });
         }
-        if (drawingCurrentPicAtX + 250 >= canvas.width) {
+        // Advance cursor to the next slot; if we were at the last valid slot, wrap now
+        if (drawingCurrentPicAtX >= lastStartX) {
             drawingCurrentPicAtX = 0;
-            drawingCurrentPicAtY += 250;
+            drawingCurrentPicAtY += TILE;
         }
         else {
-            drawingCurrentPicAtX += 250;
+            drawingCurrentPicAtX += TILE;
         }
     });
     // If the user hits the space bar, delete the last drawn image
@@ -329,13 +338,15 @@ window.onload = function () {
                 return;
             }
             if (drawingCurrentPicAtX === 0) {
-                drawingCurrentPicAtY -= 250;
-                drawingCurrentPicAtX = canvas.width - 250;
+                // Move to the last actually-used slot of the previous row.
+                drawingCurrentPicAtY -= TILE;
+                var lastSlotX = Math.max(0, (Math.floor(canvas.width / TILE) - 1) * TILE);
+                drawingCurrentPicAtX = lastSlotX;
             }
             else {
-                drawingCurrentPicAtX -= 250;
+                drawingCurrentPicAtX -= TILE;
             }
-            draw.clearRect(drawingCurrentPicAtX, drawingCurrentPicAtY, 250, 250);
+            draw.clearRect(drawingCurrentPicAtX, drawingCurrentPicAtY, TILE, TILE);
         }
     });
 };

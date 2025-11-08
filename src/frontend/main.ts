@@ -7,6 +7,7 @@ window.onload = () => {
     let canvas : HTMLCanvasElement = document.getElementById("gameCanvas") as HTMLCanvasElement ;
     
     let draw : CanvasRenderingContext2D = canvas.getContext("2d");
+    const TILE = 250;
 
 	let drawingCurrentPicAtX : number = 0;
 	let drawingCurrentPicAtY : number = 0;
@@ -59,38 +60,49 @@ window.onload = () => {
 			console.log("9!");
 			img = engine.loadedImages["h"];
 		}
-		console.log("Drawing image at ", drawingCurrentPicAtX, drawingCurrentPicAtY);
-		const drawNow = () => draw.drawImage(img, drawingCurrentPicAtX, drawingCurrentPicAtY, 250, 250);
-		if (img.complete && img.naturalWidth > 0) {
-			drawNow();
-		} else {
-			img.addEventListener("load", drawNow, { once: true });
-		}
-		if (drawingCurrentPicAtX + 250 >= canvas.width) {
-			drawingCurrentPicAtX = 0;
-			drawingCurrentPicAtY += 250;
-		}
-		else {
-			drawingCurrentPicAtX += 250;
-		}
+        console.log("Drawing image at ", drawingCurrentPicAtX, drawingCurrentPicAtY);
+        // Compute last valid X start so tiles never spill outside the canvas
+        const lastStartX = Math.max(0, (Math.floor(canvas.width / TILE) - 1) * TILE);
+
+        // If our cursor somehow points past the last valid slot, wrap before drawing
+        if (drawingCurrentPicAtX > lastStartX) {
+            drawingCurrentPicAtX = 0;
+            drawingCurrentPicAtY += TILE;
+        }
+
+        const drawNow = () => draw.drawImage(img, drawingCurrentPicAtX, drawingCurrentPicAtY, TILE, TILE);
+        if (img.complete && img.naturalWidth > 0) {
+            drawNow();
+        } else {
+            img.addEventListener("load", drawNow, { once: true });
+        }
+        // Advance cursor to the next slot; if we were at the last valid slot, wrap now
+        if (drawingCurrentPicAtX >= lastStartX) {
+            drawingCurrentPicAtX = 0;
+            drawingCurrentPicAtY += TILE;
+        } else {
+            drawingCurrentPicAtX += TILE;
+        }
 	});
 
 	// If the user hits the space bar, delete the last drawn image
 	document.addEventListener("keydown", (event: KeyboardEvent) => { 
-		if (event.code == "Space") {
-			console.log("Space!");
-			// Clear the last drawn image
-			if (drawingCurrentPicAtX === 0 && drawingCurrentPicAtY === 0) {
-				// Nothing to erase
-				return;
-			}
-			if (drawingCurrentPicAtX === 0) {
-				drawingCurrentPicAtY -= 250;
-				drawingCurrentPicAtX = canvas.width - 250;
-			} else {
-				drawingCurrentPicAtX -= 250;
-			}
-			draw.clearRect(drawingCurrentPicAtX, drawingCurrentPicAtY, 250, 250);
-		}
-	});
+        if (event.code == "Space") {
+            console.log("Space!");
+            // Clear the last drawn image
+            if (drawingCurrentPicAtX === 0 && drawingCurrentPicAtY === 0) {
+                // Nothing to erase
+                return;
+            }
+            if (drawingCurrentPicAtX === 0) {
+                // Move to the last actually-used slot of the previous row.
+                drawingCurrentPicAtY -= TILE;
+                const lastSlotX = Math.max(0, (Math.floor(canvas.width / TILE) - 1) * TILE);
+                drawingCurrentPicAtX = lastSlotX;
+            } else {
+                drawingCurrentPicAtX -= TILE;
+            }
+            draw.clearRect(drawingCurrentPicAtX, drawingCurrentPicAtY, TILE, TILE);
+        }
+    });
 }
