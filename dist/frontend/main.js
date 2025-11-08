@@ -254,9 +254,34 @@ var engine = new _engine__WEBPACK_IMPORTED_MODULE_0__.Engine();
 window.onload = function () {
     var canvas = document.getElementById("gameCanvas");
     var draw = canvas.getContext("2d");
+    var drawingCurrentPicAtX = 0;
+    var drawingCurrentPicAtY = 0;
+    // Start loading images so engine.loadedImages["a"] is defined
+    engine.setupView({ tileSize: 9, tilesWide: 85, tilesHigh: 85, imagesToLoad: ["a"], render: function () { } });
     document.addEventListener("keydown", function (event) {
         if (event.code == "Digit1") {
             console.log("1!");
+            // Safely draw only after the image is available
+            var img_1 = engine.loadedImages["a"];
+            if (!img_1) {
+                console.warn("Image 'a' is not registered. Did setupView run?");
+                return;
+            }
+            console.log("Drawing image at ", drawingCurrentPicAtX, drawingCurrentPicAtY);
+            var drawNow = function () { return draw.drawImage(img_1, drawingCurrentPicAtX, drawingCurrentPicAtY, 250, 250); };
+            if (img_1.complete && img_1.naturalWidth > 0) {
+                drawNow();
+            }
+            else {
+                img_1.addEventListener("load", drawNow, { once: true });
+            }
+            if (drawingCurrentPicAtX + 250 >= canvas.width) {
+                drawingCurrentPicAtX = 0;
+                drawingCurrentPicAtY += 250;
+            }
+            else {
+                drawingCurrentPicAtX += 250;
+            }
         }
         else if (event.code == "Digit2") {
             console.log("2!");
