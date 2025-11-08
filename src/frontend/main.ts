@@ -1,5 +1,7 @@
-// This function will be run when the page loads. It will handle making new elements, attaching event listeners, etc. 
+import { Engine } from "./engine";
+let engine : Engine = new Engine();
 
+// This function will be run when the page loads. It will handle making new elements, attaching event listeners, etc. 
 window.onload = () => {
 	let canvas : HTMLCanvasElement = document.getElementById("gameCanvas") as HTMLCanvasElement ;
 	
